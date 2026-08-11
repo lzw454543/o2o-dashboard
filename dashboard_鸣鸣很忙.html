@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鸣鸣很忙 · 渠道经营仪表盘</title>
+<script src="echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f3f4f6;--panel:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--green:#16a34a;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fef2f2;--ac:#ea580c;--ac-bg:#fff7ed}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+header{display:flex;align-items:flex-end;justify-content:space-between;padding:4px 4px 16px;border-bottom:2px solid var(--ac);margin-bottom:20px}
+header h1{font-size:22px;font-weight:700}
+header h1 span{color:var(--ac)}
+header .sub{color:var(--muted);font-size:12px;margin-top:4px}
+header .range{font-size:12px;color:var(--muted);text-align:right}
+.st{font-size:15px;font-weight:700;margin:24px 0 12px;padding-left:10px;border-left:4px solid var(--ac)}
+.st .hint{font-size:11px;font-weight:400;color:var(--muted);margin-left:8px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.kpi .lbl{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.kpi .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.kpi .v .u{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px}
+.kpi .delta{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+.kpi .delta.up{background:var(--green-bg);color:var(--green)}
+.kpi .delta.down{background:var(--red-bg);color:var(--red)}
+.kpi .delta.flat{background:#f3f4f6;color:var(--muted)}
+.kpi .sub{font-size:10px;color:var(--muted);margin-top:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.panel .pt{font-size:13px;font-weight:700;margin-bottom:2px}
+.panel .pd{font-size:11px;color:var(--muted);margin-bottom:8px}
+.chart{width:100%}
+.h300{height:280px}.h260{height:240px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.chip{padding:3px 10px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:11px;background:#fff;color:var(--ink2);user-select:none}
+.chip:hover{border-color:var(--ac)}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.chip.all{font-weight:600}
+footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center;line-height:1.7}
+@media(max-width:1000px){.kpi-row{grid-template-columns:repeat(2,1fr)}.g2,.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1><span>鸣鸣很忙</span> 渠道经营仪表盘</h1><div class="sub">食验室品牌 · 单渠道专项分析</div></div>
+  <div class="range" id="drange"></div>
+</header>
+
+<div class="st">核心指标 <span class="hint">8月1-9日 vs 7月同期，附全周期累计</span></div>
+<div class="kpi-row" id="kpiRow"></div>
+
+<div class="st">产品结构分析 <span class="hint">各产品销售额、销量、品牌补贴排名</span></div>
+<div class="g3" style="margin-bottom:14px">
+  <div class="panel"><div class="pt">产品销售额排名</div><div id="c_ps" class="chart h300"></div></div>
+  <div class="panel"><div class="pt">产品销量排名</div><div id="c_pv" class="chart h300"></div></div>
+  <div class="panel"><div class="pt">产品品牌补贴排名</div><div id="c_pb" class="chart h300"></div></div>
+</div>
+
+<div class="st">月度经营走势 <span class="hint">销售额 / 销量 / 品牌补贴 / 订单数</span></div>
+<div class="g2" style="margin-bottom:14px">
+  <div class="panel"><div class="pt">月度销售额与品牌补贴</div><div class="pd">柱：销售额、补贴 · 线：补贴率</div><div id="c_ms" class="chart h260"></div></div>
+  <div class="panel"><div class="pt">月度销量与订单数</div><div class="pd">柱：销量 · 线：订单数</div><div id="c_mv" class="chart h260"></div></div>
+</div>
+
+<div class="st">每日趋势 <span class="hint">可多选产品筛选</span></div>
+<div class="panel">
+  <div class="chips" id="prodChips"></div>
+  <div class="tab-bar" id="dayTabs" style="display:flex;gap:6px;margin-bottom:10px">
+    <div class="chip on" data-m="all" style="font-weight:600">销售额+补贴</div>
+                            <div class="chip" data-m="vol">销量</div>
+                            <div class="chip" data-m="store">门店数</div>
+  </div>
+  <div id="c_daily" class="chart h300"></div>
+</div>
+
+<footer>
+  数据源：O2O销量汇总.xlsx · 松鼠便利含松鼠单体加盟 · 8月数据截至2026-08-09<br>
+  金额单位：元 · 销量单位：件
+</footer>
+</div>
+<script>
+const D={"channel": "鸣鸣很忙", "color": "#ea580c", "bg": "#fff7ed", "kpi": {"channel": "鸣鸣很忙", "augMtd": 31260.06, "augSub": 7604.01, "augRatio": 24.32, "julSamePeriod": 0.0, "julSameSub": 0.0, "growthPct": null, "subGrowthPct": null, "julFull": 5506.93, "julFullSub": 352.98, "junFull": 0.0, "junFullSub": 0.0}, "daily": {"dates": ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-13", "2026-06-14", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19", "2026-06-20", "2026-06-21", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28", "2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03", "2026-07-04", "2026-07-05", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-11", "2026-07-12", "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-01", "2026-08-02", "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-08", "2026-08-09"], "销量": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 390.0, 366.0, 497.0, 680.0, 726.0, 505.0, 658.0, 787.0, 705.0, 762.0, 1064.0, 1207.0], "销售额": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1718.34, 1576.9, 2211.69, 3055.78, 3229.72, 2207.53, 2854.54, 3451.11, 3187.21, 3321.24, 4671.94, 5280.99], "补贴": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 352.98, 722.019, 786.52, 323.3, 438.6704, 748.5614, 704.1792, 827.5738, 1456.44, 1596.7416], "门店数": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1668, 1732, 1774, 1812, 1845, 1873, 1889, 1909, 1928, 1941, 1943, 1958]}, "prods": ["食验室浓浓芝士玉米片40g（零食很忙专供）", "食验室经典海盐玉米片50g（零食很忙专供）", "食验室十蔬小饼奶油黄瓜味40g"], "prodDaily": {"食验室浓浓芝士玉米片40g（零食很忙专供）": {"v": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 189.0, 151.0, 260.0, 378.0, 379.0, 233.0, 287.0, 370.0, 406.0, 345.0, 507.0, 562.0], "s": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 960.57, 766.35, 1318.2, 1917.24, 1921.53, 1181.31, 1455.87, 1879.02, 2059.2, 1749.15, 2571.27, 2849.34], "b": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 288.8182, 579.449, 588.8512, 228.7798, 301.1672, 532.8514, 568.5416, 567.1636, 905.3566, 977.585], "st": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1636, 1696, 1736, 1767, 1804, 1836, 1851, 1879, 1897, 1915, 1928, 1939]}, "食验室经典海盐玉米片50g（零食很忙专供）": {"v": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 199.0, 202.0, 224.0, 279.0, 300.0, 232.0, 331.0, 349.0, 264.0, 326.0, 448.0, 499.0], "s": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 750.23, 761.54, 844.48, 1051.83, 1131.0, 875.42, 1247.87, 1315.73, 996.06, 1229.02, 1689.74, 1881.23], "b": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 59.0102, 130.4118, 174.4548, 85.1286, 119.833, 189.8778, 123.1508, 203.1278, 433.7414, 475.5584], "st": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1668, 1732, 1774, 1812, 1845, 1873, 1889, 1909, 1928, 1941, 1943, 1958]}, "食验室十蔬小饼奶油黄瓜味40g": {"v": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 13.0, 13.0, 23.0, 47.0, 40.0, 40.0, 68.0, 35.0, 91.0, 109.0, 146.0], "s": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 7.54, 49.01, 49.01, 86.71, 177.19, 150.8, 150.8, 256.36, 131.95, 343.07, 410.93, 550.42], "b": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.1516, 12.1582, 23.214, 9.3916, 17.6702, 25.8322, 12.4868, 57.2824, 117.342, 143.5982], "st": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 61, 203, 312, 384, 451, 543, 595, 630, 672, 711, 731, 763]}}, "prodSales": [{"name": "食验室浓浓芝士玉米片40g（零食很忙专供）", "value": 20629.05}, {"name": "食验室经典海盐玉米片50g（零食很忙专供）", "value": 13774.15}, {"name": "食验室十蔬小饼奶油黄瓜味40g", "value": 2363.79}], "prodVol": [{"name": "食验室浓浓芝士玉米片40g（零食很忙专供）", "value": 4067.0}, {"name": "食验室经典海盐玉米片50g（零食很忙专供）", "value": 3653.0}, {"name": "食验室十蔬小饼奶油黄瓜味40g", "value": 627.0}], "prodSub": [{"name": "食验室浓浓芝士玉米片40g（零食很忙专供）", "value": 5538.56}, {"name": "食验室经典海盐玉米片50g（零食很忙专供）", "value": 1994.29}, {"name": "食验室十蔬小饼奶油黄瓜味40g", "value": 424.13}], "monthly": {"months": ["2026-07", "2026-08"], "销售额": [5506.93, 31260.06], "销量": [1253.0, 7094.0], "补贴": [352.98, 7604.0054], "订单": [994.0, 5357.0]}, "totals": {"销售额": 36766.99, "销量": 8347.0, "补贴": 7956.9854, "订单": 6351.0}};
+const C=D.color;
+const charts=[];
+function mk(id){const c=echarts.init(document.getElementById(id));charts.push(c);return c;}
+const ax={axisLine:{lineStyle:{color:"#d1d5db"}},axisTick:{show:false},axisLabel:{color:"#6b7280",fontSize:10},splitLine:{lineStyle:{color:"#f3f4f6"}}};
+function fmt(n){n=Number(n);return n>=10000?(n/10000).toFixed(2)+"万":Math.round(n).toLocaleString("zh-CN");}
+function fmt2(n){return Number(n).toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function dcls(v){return v===null?"flat":(v>=0?"up":"down");}
+function dtxt(v){if(v===null)return"新增";return(v>=0?"+":"")+v+"%";}
+document.getElementById("drange").textContent=D.daily.dates[0]+" 至 "+D.daily.dates[D.daily.dates.length-1];
+
+(function(){
+  const k=D.kpi,t=D.totals;
+  const sg=k.growthPct,ig=k.subGrowthPct;
+  document.getElementById("kpiRow").innerHTML=[
+    {l:"8月销售额",v:fmt2(k.augMtd),u:"元",d:dtxt(sg),c:dcls(sg),s:"7月同期 ¥"+fmt2(k.julSamePeriod)},
+    {l:"品牌投入(含税)",v:fmt2(k.augSub),u:"元",d:dtxt(ig),c:dcls(ig),s:"7月同期 ¥"+fmt2(k.julSameSub)},
+    {l:"投入占比",v:k.augRatio,u:"%",d:"",c:"flat",s:"品牌投入/销售额"},
+    {l:"全周期销售额",v:fmt2(t.销售额),u:"元",d:"",c:"flat",s:"销量"+fmt(t.销量)+"件 · 订单"+fmt(t.订单)},
+  ].map(x=>'<div class="kpi"><div class="lbl"><span>'+x.l+'</span>'+(x.d?'<span class="delta '+x.c+'">'+x.d+'</span>':'')+'</div><div class="v" style="color:'+(x.l==='品牌投入(含税)'?C:'var(--ink)')+'">'+x.v+'<span class="u">'+x.u+'</span></div><div class="sub">'+x.s+'</div></div>').join("");
+})();
+
+function rbar(items,fn){
+  const s=items.slice().sort(function(a,b){return a.value-b.value;});
+  const mx=Math.max.apply(null,s.map(function(d){return d.value;}));
+  const data=s.map(function(d,i){return{name:d.name.length>14?d.name.slice(0,13)+"…":d.name,fullName:d.name,value:d.value,itemStyle:{color:d.value===mx?"#16a34a":"rgba(17,24,39,"+(0.3+0.55*(i/Math.max(1,s.length-1))).toFixed(2)+")",borderRadius:[0,3,3,0]}};});
+  return{grid:{left:8,right:65,top:8,bottom:8,containLabel:true},tooltip:{trigger:"axis",axisPointer:{type:"shadow"},formatter:function(p){return p[0].data.fullName+"<br/>"+fn(p[0].value);}},
+    xAxis:{type:"value",axisLine:ax.axisLine,axisTick:ax.axisTick,splitLine:ax.splitLine,axisLabel:{color:"#6b7280",fontSize:10,formatter:function(v){return fmt(v);}}},
+    yAxis:{type:"category",data:s.map(function(d){return d.name.length>14?d.name.slice(0,13)+"…":d.name;}),axisLine:ax.axisLine,axisTick:ax.axisTick,splitLine:{show:false},axisLabel:{color:"#374151",fontSize:10}},
+    series:[{type:"bar",data:data,barMaxWidth:18,label:{show:true,position:"right",formatter:function(p){return fn(p.value);},fontSize:10,color:"#374151"}}]};
+}
+mk("c_ps").setOption(rbar(D.prodSales,function(v){return"¥"+fmt2(v);}));
+mk("c_pv").setOption(rbar(D.prodVol,function(v){return fmt(v)+"件";}));
+mk("c_pb").setOption(rbar(D.prodSub,function(v){return"¥"+fmt2(v);}));
+
+(function(){
+  const m=D.monthly;
+  const ratio=m.销售额.map(function(s,i){return s>0?+(m.补贴[i]/s*100).toFixed(2):0;});
+  mk("c_ms").setOption({tooltip:{trigger:"axis"},legend:{top:0,textStyle:{fontSize:10}},
+    grid:{left:8,right:8,top:32,bottom:8,containLabel:true},
+    xAxis:{type:"category",data:m.months,...ax},
+    yAxis:[{type:"value",...ax,axisLabel:{...ax.axisLabel,formatter:function(v){return fmt(v);}}},{type:"value",...ax,splitLine:{show:false},axisLabel:{...ax.axisLabel,formatter:"{value}%"},max:function(v){return Math.ceil(v.max*1.3);}}],
+    series:[{name:"销售额",type:"bar",data:m.销售额,itemStyle:{color:C,borderRadius:[4,4,0,0]},barMaxWidth:36},{name:"品牌补贴",type:"bar",data:m.补贴,itemStyle:{color:"#f59e0b",borderRadius:[4,4,0,0]},barMaxWidth:36},{name:"补贴率",type:"line",yAxisIndex:1,data:ratio,smooth:true,symbol:"circle",symbolSize:7,lineStyle:{width:2.5,color:"#dc2626"},itemStyle:{color:"#dc2626"},label:{show:true,formatter:"{c}%",fontSize:10,color:"#dc2626",position:"top"}}]});
+  mk("c_mv").setOption({tooltip:{trigger:"axis"},legend:{top:0,textStyle:{fontSize:10}},
+    grid:{left:8,right:8,top:32,bottom:8,containLabel:true},
+    xAxis:{type:"category",data:m.months,...ax},
+    yAxis:[{type:"value",name:"销量",...ax,axisLabel:{...ax.axisLabel,formatter:function(v){return fmt(v);}}},{type:"value",name:"订单",...ax,splitLine:{show:false},axisLabel:{...ax.axisLabel,formatter:function(v){return fmt(v);}}}],
+    series:[{name:"销量",type:"bar",data:m.销量,itemStyle:{color:"rgba(37,99,235,0.5)",borderRadius:[4,4,0,0]},barMaxWidth:40},{name:"订单数",type:"line",yAxisIndex:1,data:m.订单,smooth:true,symbol:"circle",symbolSize:7,lineStyle:{width:2.5,color:"#0d9488"},itemStyle:{color:"#0d9488"}}]});
+})();
+
+(function(){
+  const prods=D.prods;let sel=new Set(prods);let mode="all";
+  const box=document.getElementById("prodChips");
+  const allChip='<div class="chip all on" data-act="all">全选</div>';
+  box.innerHTML=allChip+prods.map(function(p,i){return'<div class="chip on" data-i="'+i+'">'+(p.length>10?p.slice(0,9)+"…":p)+'</div>';}).join("");
+  const tabs=document.getElementById("dayTabs");
+  const c=mk("c_daily");
+  function up(){
+    const n=D.daily.dates.length;
+    const v=new Array(n).fill(0),s=new Array(n).fill(0),b=new Array(n).fill(0);
+    sel.forEach(function(p){const pd=D.prodDaily[p];for(let i=0;i<n;i++){v[i]+=pd.v[i];s[i]+=pd.s[i];b[i]+=pd.b[i];}});
+    const st=new Array(n).fill(0);sel.forEach(function(p){const pd=D.prodDaily[p];for(let i=0;i<n;i++){if(pd.st[i]>st[i])st[i]=pd.st[i];}});
+    let series;
+    if(mode==="store"){
+      series=[{name:"门店数",type:"line",smooth:true,symbol:"none",data:st,lineStyle:{width:2.2,color:"#7c3aed"},itemStyle:{color:"#7c3aed"},areaStyle:{opacity:0.08,color:"#7c3aed"}}];
+    }else if(mode==="vol"){
+      series=[{name:"销量",type:"bar",data:v.map(function(x){return Math.round(x*100)/100;}),itemStyle:{color:"rgba(37,99,235,0.4)"},barMaxWidth:8}];
+    }else{
+      series=[
+        {name:"销售额",type:"line",smooth:true,symbol:"none",data:s.map(function(x){return Math.round(x*100)/100;}),lineStyle:{width:2.2,color:C},itemStyle:{color:C},areaStyle:{opacity:0.08,color:C}},
+        {name:"品牌补贴",type:"line",smooth:true,symbol:"none",data:b.map(function(x){return Math.round(x*100)/100;}),lineStyle:{width:2,color:"#ea580c",type:"dashed"},itemStyle:{color:"#ea580c"}}
+      ];
+    }
+    c.setOption({tooltip:{trigger:"axis",formatter:function(p){let s2=p[0].axisValue+"<br/>";p.forEach(function(x){const u=(x.seriesName==="销售额"||x.seriesName==="品牌补贴")?"¥":"";s2+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+x.color+';margin-right:6px"></span>'+x.seriesName+"："+u+Number(x.value).toLocaleString("zh-CN",{maximumFractionDigits:2})+"<br/>";});return s2;}},
+      legend:{top:0,textStyle:{fontSize:10}},grid:{left:8,right:8,top:30,bottom:8,containLabel:true},
+      xAxis:{type:"category",data:D.daily.dates,boundaryGap:false,...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return x.slice(5);},interval:6}},
+      yAxis:{type:"value",...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return fmt(x);}}},dataZoom:[{type:"inside"}],series:series},true);
+  }
+  box.querySelectorAll(".chip").forEach(function(el){
+    el.onclick=function(){
+      if(el.dataset.act==="all"){sel=new Set(prods);box.querySelectorAll(".chip").forEach(function(x){x.classList.add("on");});}
+      else{const p=prods[+el.dataset.i];if(el.classList.contains("on")){if(sel.size<=1)return;sel.delete(p);el.classList.remove("on");}else{sel.add(p);el.classList.add("on");}box.querySelector('[data-act="all"]').classList.toggle("on",sel.size===prods.length);}
+      up();
+    };
+  });
+  tabs.querySelectorAll(".chip").forEach(function(t){
+    t.onclick=function(){tabs.querySelectorAll(".chip").forEach(function(x){x.classList.remove("on");});t.classList.add("on");mode=t.dataset.m;up();};
+  });
+  up();
+})();
+
+window.addEventListener("resize",function(){charts.forEach(function(c){c.resize();});});
+</script>
+</body>
+</html>
