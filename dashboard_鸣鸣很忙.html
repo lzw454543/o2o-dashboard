@@ -77,6 +77,26 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-si
   <div id="c_daily" class="chart h300"></div>
 </div>
 
+<div class="st">分产品每日趋势 <span class="hint">每个产品单独一条线，不聚合，可多选产品</span></div>
+<div class="panel" style="margin-bottom:14px">
+  <div class="pt">每日销量趋势（分产品）</div>
+  <div class="pd">选中产品分别展示，单位：件</div>
+  <div class="chips" id="volChips"></div>
+  <div id="c_volProd" class="chart h300"></div>
+</div>
+<div class="panel" style="margin-bottom:14px">
+  <div class="pt">每日销售额趋势（分产品）</div>
+  <div class="pd">选中产品分别展示，单位：元（含税）</div>
+  <div class="chips" id="saleChips"></div>
+  <div id="c_saleProd" class="chart h300"></div>
+</div>
+<div class="panel" style="margin-bottom:14px">
+  <div class="pt">每日门店数趋势（分产品）</div>
+  <div class="pd">门店数 = 铺货店铺数 × (1 - SKU售罄率)，每产品单独展示</div>
+  <div class="chips" id="storeChips"></div>
+  <div id="c_storeProd" class="chart h300"></div>
+</div>
+
 <footer>
   数据源：O2O销量汇总.xlsx · 松鼠便利含松鼠单体加盟 · 8月数据截至2026-08-09<br>
   金额单位：元 · 销量单位：件
@@ -173,6 +193,54 @@ mk("c_pb").setOption(rbar(D.prodSub,function(v){return"¥"+fmt2(v);}));
   });
   up();
 })();
+
+
+/* Per-product daily trend charts */
+const PAL=["#2563eb","#ea580c","#16a34a","#9333ea","#dc2626","#0891b2","#ca8a04","#db2777","#4f46e5","#059669","#d97706","#7c3aed"];
+function shortName(p){return p.length>12?p.slice(0,11)+"…":p;}
+function makeProdChart(containerId,chipId,metric,unit,areaColor){
+  const prods=D.prods;let sel=new Set(prods);
+  const box=document.getElementById(chipId);
+  box.innerHTML='<div class="chip all on" data-act="all">全选</div>'+prods.map(function(p,i){return'<div class="chip on" data-i="'+i+'" title="'+p+'">'+shortName(p)+'</div>';}).join("");
+  const c=mk(containerId);
+  function up(){
+    const n=D.daily.dates.length;
+    const series=[];
+    let ci=0;
+    prods.forEach(function(p){
+      if(!sel.has(p))return;
+      const pd=D.prodDaily[p];
+      const col=PAL[ci%PAL.length];ci++;
+      series.push({name:p,type:"line",smooth:true,symbol:"none",data:pd[metric].map(function(x){return Math.round(x*100)/100;}),
+        lineStyle:{width:2,color:col},itemStyle:{color:col},
+        areaStyle:areaColor?{opacity:0.04,color:col}:undefined});
+    });
+    c.setOption({
+      tooltip:{trigger:"axis",formatter:function(ps){
+        let h=ps[0].axisValue+"<br/>";
+        ps.forEach(function(x){h+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+x.color+';margin-right:6px"></span>'+x.seriesName+"："+(unit==="元"?"¥":"")+Number(x.value).toLocaleString("zh-CN",{maximumFractionDigits:2})+(unit==="件"?"件":unit==="门"?"店":"")+"<br/>";});
+        return h;
+      }},
+      legend:{type:"scroll",top:0,textStyle:{fontSize:10},data:prods.filter(function(p){return sel.has(p);})},
+      grid:{left:8,right:8,top:36,bottom:8,containLabel:true},
+      xAxis:{type:"category",data:D.daily.dates,boundaryGap:false,...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return x.slice(5);},interval:6}},
+      yAxis:{type:"value",...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return fmt(x);}}},
+      dataZoom:[{type:"inside"}],
+      series:series
+    },true);
+  }
+  box.querySelectorAll(".chip").forEach(function(el){
+    el.onclick=function(){
+      if(el.dataset.act==="all"){sel=new Set(prods);box.querySelectorAll(".chip").forEach(function(x){x.classList.add("on");});}
+      else{const p=prods[+el.dataset.i];if(el.classList.contains("on")){if(sel.size<=1)return;sel.delete(p);el.classList.remove("on");}else{sel.add(p);el.classList.add("on");}box.querySelector('[data-act="all"]').classList.toggle("on",sel.size===prods.length);}
+      up();
+    };
+  });
+  up();
+}
+makeProdChart("c_volProd","volChips","v","件",false);
+makeProdChart("c_saleProd","saleChips","s","元",false);
+makeProdChart("c_storeProd","storeChips","st","门",false);
 
 window.addEventListener("resize",function(){charts.forEach(function(c){c.resize();});});
 </script>
