@@ -63,6 +63,9 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-si
 (function(){var f=location.pathname.split("/").pop();document.querySelectorAll("#navBar a").forEach(function(a){if(a.dataset.page===f)a.classList.add("active");});})();
 </script>
 
+<script>if(window.self!==window.top){document.addEventListener("DOMContentLoaded",function(){var n=document.getElementById("navBar");if(n)n.style.display="none";});}</script>
+
+
 
 <div class="st">核心指标 <span class="hint" id="kpiHint"></span></div>
 <div class="kpi-row" id="kpiRow"></div>
