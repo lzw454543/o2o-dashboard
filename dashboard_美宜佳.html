@@ -136,9 +136,10 @@ document.getElementById("dataThrough").textContent=D.latestDate;
 (function(){
   const k=D.kpi,t=D.totals;
   const sg=k.growthPct,ig=k.subGrowthPct;
+  const cm=+D.daily.dates[D.daily.dates.length-1].slice(5,7), pm=cm===1?12:cm-1;
   document.getElementById("kpiRow").innerHTML=[
-    {l:"8月销售额",v:fmt2(k.augMtd),u:"元",d:dtxt(sg),c:dcls(sg),s:"7月同期 ¥"+fmt2(k.julSamePeriod)},
-    {l:"品牌投入(含税)",v:fmt2(k.augSub),u:"元",d:dtxt(ig),c:dcls(ig),s:"7月同期 ¥"+fmt2(k.julSameSub)},
+    {l:cm+"月销售额",v:fmt2(k.augMtd),u:"元",d:dtxt(sg),c:dcls(sg),s:pm+"月同期 ¥"+fmt2(k.julSamePeriod)},
+    {l:"品牌投入(含税)",v:fmt2(k.augSub),u:"元",d:dtxt(ig),c:dcls(ig),s:pm+"月同期 ¥"+fmt2(k.julSameSub)},
     {l:"投入占比",v:k.augRatio,u:"%",d:"",c:"flat",s:"品牌投入/销售额"},
     {l:"全周期销售额",v:fmt2(t.销售额),u:"元",d:"",c:"flat",s:"销量"+fmt(t.销量)+"件 · 订单"+fmt(t.订单)},
   ].map(x=>'<div class="kpi"><div class="lbl"><span>'+x.l+'</span>'+(x.d?'<span class="delta '+x.c+'">'+x.d+'</span>':'')+'</div><div class="v" style="color:'+(x.l==='品牌投入(含税)'?C:'var(--ink)')+'">'+x.v+'<span class="u">'+x.u+'</span></div><div class="sub">'+x.s+'</div></div>').join("");
