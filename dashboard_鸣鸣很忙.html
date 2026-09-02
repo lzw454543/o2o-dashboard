@@ -38,7 +38,7 @@ header .range{font-size:12px;color:var(--muted);text-align:right}
 .chip{padding:3px 10px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:11px;background:#fff;color:var(--ink2);user-select:none}
 .chip:hover{border-color:var(--ac)}
 .chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
-.chip.all{font-weight:600}
+.chip.all{font-weight:600}.chip.none{font-weight:600}
 footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center;line-height:1.7}
 
 .nav{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}
@@ -175,7 +175,7 @@ mk("c_pb").setOption(rbar(D.prodSub,function(v){return"¥"+fmt2(v);}));
 (function(){
   const prods=D.prods;let sel=new Set(prods);let mode="all";
   const box=document.getElementById("prodChips");
-  const allChip='<div class="chip all on" data-act="all">全选</div>';
+  const allChip='<div class="chip all on" data-act="all">全选</div><div class="chip none" data-act="none">全不选</div>';
   box.innerHTML=allChip+prods.map(function(p,i){return'<div class="chip on" data-i="'+i+'">'+(p.length>10?p.slice(0,9)+"…":p)+'</div>';}).join("");
   const tabs=document.getElementById("dayTabs");
   const c=mk("c_daily");
@@ -200,10 +200,16 @@ mk("c_pb").setOption(rbar(D.prodSub,function(v){return"¥"+fmt2(v);}));
       xAxis:{type:"category",data:D.daily.dates,boundaryGap:false,...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return x.slice(5);},interval:6}},
       yAxis:{type:"value",...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return fmt(x);}}},dataZoom:[{type:"inside"}],series:series},true);
   }
+  function syncChips(){
+    box.querySelectorAll('.chip[data-i]').forEach(function(x){x.classList.toggle("on",sel.has(prods[+x.dataset.i]));});
+    box.querySelector('[data-act="all"]').classList.toggle("on",sel.size===prods.length);
+    box.querySelector('[data-act="none"]').classList.toggle("on",sel.size===0);
+  }
   box.querySelectorAll(".chip").forEach(function(el){
     el.onclick=function(){
-      if(el.dataset.act==="all"){sel=new Set(prods);box.querySelectorAll(".chip").forEach(function(x){x.classList.add("on");});}
-      else{const p=prods[+el.dataset.i];if(el.classList.contains("on")){if(sel.size<=1)return;sel.delete(p);el.classList.remove("on");}else{sel.add(p);el.classList.add("on");}box.querySelector('[data-act="all"]').classList.toggle("on",sel.size===prods.length);}
+      if(el.dataset.act==="all"){sel=new Set(prods);syncChips();}
+      else if(el.dataset.act==="none"){sel=new Set();syncChips();}
+      else{const p=prods[+el.dataset.i];if(el.classList.contains("on")){if(sel.size<=1)return;sel.delete(p);}else{sel.add(p);}syncChips();}
       up();
     };
   });
@@ -220,7 +226,7 @@ function shortName(p){return p.length>12?p.slice(0,11)+"…":p;}
 function makeProdChart(containerId,chipId,metric,unit,areaColor){
   const prods=D.prods;let sel=new Set(prods);
   const box=document.getElementById(chipId);
-  box.innerHTML='<div class="chip all on" data-act="all">全选</div>'+prods.map(function(p,i){return'<div class="chip on" data-i="'+i+'" title="'+p+'">'+shortName(p)+'</div>';}).join("");
+  box.innerHTML='<div class="chip all on" data-act="all">全选</div><div class="chip none" data-act="none">全不选</div>'+prods.map(function(p,i){return'<div class="chip on" data-i="'+i+'" title="'+p+'">'+shortName(p)+'</div>';}).join("");
   const c=mk(containerId);
   function up(){
     const n=D.daily.dates.length;
@@ -248,10 +254,16 @@ function makeProdChart(containerId,chipId,metric,unit,areaColor){
       series:series
     },true);
   }
+  function syncChips(){
+    box.querySelectorAll('.chip[data-i]').forEach(function(x){x.classList.toggle("on",sel.has(prods[+x.dataset.i]));});
+    box.querySelector('[data-act="all"]').classList.toggle("on",sel.size===prods.length);
+    box.querySelector('[data-act="none"]').classList.toggle("on",sel.size===0);
+  }
   box.querySelectorAll(".chip").forEach(function(el){
     el.onclick=function(){
-      if(el.dataset.act==="all"){sel=new Set(prods);box.querySelectorAll(".chip").forEach(function(x){x.classList.add("on");});}
-      else{const p=prods[+el.dataset.i];if(el.classList.contains("on")){if(sel.size<=1)return;sel.delete(p);el.classList.remove("on");}else{sel.add(p);el.classList.add("on");}box.querySelector('[data-act="all"]').classList.toggle("on",sel.size===prods.length);}
+      if(el.dataset.act==="all"){sel=new Set(prods);syncChips();}
+      else if(el.dataset.act==="none"){sel=new Set();syncChips();}
+      else{const p=prods[+el.dataset.i];if(el.classList.contains("on")){if(sel.size<=1)return;sel.delete(p);}else{sel.add(p);}syncChips();}
       up();
     };
   });
