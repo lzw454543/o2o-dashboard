@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美团+淘闪整体销额日趋势</title>
+<link rel="icon" href="data:,">
+<script src="echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f3f4f6;--panel:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--ac:#0f766e;--ac-bg:#ecfdf5}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5}
+.wrap{max-width:1440px;margin:0 auto;padding:20px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:4px 4px 16px;border-bottom:2px solid var(--ac);margin-bottom:18px}
+h1{font-size:22px;font-weight:700}h1 span{color:var(--ac)}.sub{color:var(--muted);font-size:12px;margin-top:4px}.range{color:var(--muted);font-size:12px;text-align:right;white-space:nowrap}
+.back{display:inline-flex;margin-bottom:14px;padding:7px 13px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);text-decoration:none;font-weight:600}.back:hover{border-color:var(--ac);color:var(--ac)}
+.note{background:var(--ac-bg);border:1px solid #99f6e4;border-radius:8px;padding:10px 12px;color:#134e4a;margin-bottom:16px}
+.st{font-size:15px;font-weight:700;margin:22px 0 12px;padding-left:10px;border-left:4px solid var(--ac)}.st .hint{font-size:11px;font-weight:400;color:var(--muted);margin-left:8px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;min-height:104px}.kpi .lbl{font-size:11px;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:6px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block}.kpi .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.3px}.kpi .u{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px}.kpi .roi{font-size:12px;color:var(--muted);margin-top:7px}.kpi .roi b{color:var(--ink);font-size:14px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;margin-bottom:14px}.pt{font-size:13px;font-weight:700;margin-bottom:3px}.pd{font-size:11px;color:var(--muted);margin-bottom:8px}.chart{width:100%;height:420px}.chart.compact{height:360px}
+.table-wrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:430px}
+table{width:100%;border-collapse:collapse;background:#fff;min-width:720px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{background:#f9fafb;color:#374151;font-weight:700;position:sticky;top:0;z-index:1}tr:last-child td{border-bottom:0}
+footer{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center;line-height:1.7}
+@media(max-width:980px){header{align-items:flex-start;flex-direction:column}.range{text-align:left}.chart{height:340px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="index.html#cross-sales">返回首页</a>
+<header>
+  <div><h1><span>美团 + 淘闪</span> 整体销额日趋势</h1><div class="sub">全渠道整体汇总 · 按同一日期对齐</div></div>
+  <div class="range" id="rangeText"></div>
+</header>
+<div class="note" id="noteText"></div>
+<div class="st">核心指标 <span class="hint">统计区间为两平台共同覆盖日期</span></div>
+<div class="kpi-row" id="kpiRow"></div>
+<div class="st">日趋势 <span class="hint">美团、淘闪及合计销售额</span></div>
+<div id="chartArea"></div>
+<div class="st">每日明细 <span class="hint">补贴为 0 时 ROI 留空</span></div>
+<div class="table-wrap"><table id="dailyTable"></table></div>
+<footer>
+  美团数据来源：O2O销量汇总全渠道；淘闪数据来源：淘闪销售概览全渠道。<br>
+  ROI = 当日销售额 / 当日品牌补贴金额；合计 ROI 使用合计销售额除以合计补贴，不做日 ROI 平均。
+</footer>
+</div>
+<script>
+const D={"dates":["2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17"],"startDate":"2026-08-10","latestDate":"2026-09-17","meituan":{"name":"美团","sales":[33290.66,37540.48,32450.27,37154.43,35819.51,36764.48,37176.44,35080.72,37636.12,37611.62,36906.56,36785.45,39948.99,41317.26,38534.58,37087.82,38375.44,40921.21,40483.08,46304.05,49210.3,42267.1,39884.63,41669.67,40764.41,39056.42,45412.63,49910.41,36785.07,37209.38,38238.1,34959.23,36916.41,41631.93,44467.0,34701.19,33107.01,32345.46,32705.59],"subsidy":[2751.442,3256.1716,2689.0822,2966.9718,2918.6252,3087.7376,3184.1446,4041.9602,4343.7528,4201.681,4409.494,4223.9304,4516.4692,5779.8302,5520.003,5479.2142,5206.826,6351.2444,6139.0112,6954.3738,7344.0616,6365.3424,5965.468,6399.1882,6291.9056,6086.4988,6994.3994,7939.6226,5480.7194,5504.8556,5499.386,5510.7174,6063.783,6298.732,7603.6874,5598.1886,4188.0282,4107.7332,3894.8322],"roi":[12.1,11.53,12.07,12.52,12.27,11.91,11.68,8.68,8.66,8.95,8.37,8.71,8.85,7.15,6.98,6.77,7.37,6.44,6.59,6.66,6.7,6.64,6.69,6.51,6.48,6.42,6.49,6.29,6.71,6.76,6.95,6.34,6.09,6.61,5.85,6.2,7.91,7.87,8.4],"totalSales":1508431.11,"totalSubsidy":201159.11,"totalRoi":7.5},"taoshan":{"name":"淘闪","sales":[6328.0,6226.0,6661.0,6075.0,6075.0,6384.0,6131.0,6227.0,5757.0,5743.0,5934.0,6510.0,6841.0,6552.0,5768.0,5539.0,13461.0,15200.0,15371.0,17137.0,17780.0,14638.0,12552.0,12676.0,17663.0,17422.0,20569.0,21845.0,16048.0,16067.0,19509.0,18190.0,22176.0,33096.0,35384.0,22983.0,25807.0,24771.0,25205.0],"subsidy":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,708.0,642.0,637.0,570.0,702.0,596.0,559.0,510.0,560.0,579.0,540.0,455.0,580.0,463.0,479.0,2050.0,4980.0,4564.0,2630.0,2809.0,2613.0,2525.0],"roi":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,21.47,23.94,26.9,31.19,20.85,21.06,22.68,34.63,31.11,35.53,40.45,35.27,27.7,42.14,37.97,10.82,6.65,7.75,8.74,9.19,9.48,9.98],"totalSales":554301.0,"totalSubsidy":30751.0,"totalRoi":18.03},"total":{"name":"美团+淘闪","sales":[39618.66,43766.48,39111.27,43229.43,41894.51,43148.48,43307.44,41307.72,43393.12,43354.62,42840.56,43295.45,46789.99,47869.26,44302.58,42626.82,51836.44,56121.21,55854.08,63441.05,66990.3,56905.1,52436.63,54345.67,58427.41,56478.42,65981.63,71755.41,52833.07,53276.38,57747.1,53149.23,59092.41,74727.93,79851.0,57684.19,58914.01,57116.46,57910.59],"subsidy":[2751.442,3256.1716,2689.0822,2966.9718,2918.6252,3087.7376,3184.1446,4041.9602,4343.7528,4201.681,4409.494,4223.9304,4516.4692,5779.8302,5520.003,5479.2142,5206.826,7059.2444,6781.0112,7591.3738,7914.0616,7067.3424,6561.468,6958.1882,6801.9056,6646.4988,7573.3994,8479.6226,5935.7194,6084.8556,5962.386,5989.7174,8113.783,11278.732,12167.6874,8228.1886,6997.0282,6720.7332,6419.8322],"roi":[14.4,13.44,14.54,14.57,14.35,13.97,13.6,10.22,9.99,10.32,9.72,10.25,10.36,8.28,8.03,7.78,9.96,7.95,8.24,8.36,8.46,8.05,7.99,7.81,8.59,8.5,8.71,8.46,8.9,8.76,9.69,8.87,7.28,6.63,6.56,7.01,8.42,8.5,9.02],"totalSales":2062732.11,"totalSubsidy":231910.11,"totalRoi":8.89},"sources":{"meituan":"C:\\Users\\45454\\Documents\\Codex\\O2O\\data\\O2O销量汇总.xlsx","taoshan":"C:\\Users\\45454\\Documents\\Codex\\O2O\\data\\raw_archive\\taoshan\\淘闪销售概览_20260810-20260917.xlsx"}};
+const MODE="sales";
+const SERIES=[
+  {key:'meituan',name:'美团',color:'#2563eb'},
+  {key:'taoshan',name:'淘闪',color:'#d97706'},
+  {key:'total',name:'美团+淘闪合计',color:'#16a34a'}
+];
+const charts=[];
+const ax={axisLine:{lineStyle:{color:'#d1d5db'}},axisLabel:{color:'#6b7280',fontSize:10},splitLine:{lineStyle:{color:'#f3f4f6'}}};
+function fmt(v,digits=0){if(v===null||v===undefined||Number.isNaN(v))return '--';return Number(v).toLocaleString('zh-CN',{minimumFractionDigits:digits,maximumFractionDigits:digits});}
+function monthDay(x){return x.slice(5);}
+function kpiCards(){
+  const row=document.getElementById('kpiRow');
+  SERIES.forEach(function(s){
+    const item=D[s.key];
+    const card=document.createElement('div');card.className='kpi';
+    if(MODE==='sales'){
+      card.innerHTML='<div class="lbl"><span class="dot" style="background:'+s.color+'"></span>'+s.name+'</div><div class="v">'+fmt(item.totalSales,0)+'<span class="u">元</span></div><div class="roi">最新日：'+fmt(item.sales[item.sales.length-1],0)+' 元</div>';
+    }else{
+      card.innerHTML='<div class="lbl"><span class="dot" style="background:'+s.color+'"></span>'+s.name+'</div><div class="v">'+fmt(item.totalSubsidy,0)+'<span class="u">元</span></div><div class="roi">期间 ROI：<b>'+fmt(item.totalRoi,2)+'</b></div>';
+    }
+    row.appendChild(card);
+  });
+}
+function makeChart(metric,unit,heightClass){
+  const wrap=document.createElement('div');wrap.className='panel';
+  wrap.innerHTML='<div class="pt"></div><div class="pd"></div><div class="chart '+heightClass+'"></div>';
+  const isRoi=metric==='roi';
+  wrap.querySelector('.pt').textContent=isRoi?'每日 ROI':'每日'+unit;
+  wrap.querySelector('.pd').textContent=isRoi?'ROI = 当日销售额 / 当日补贴金额':'单位：元';
+  document.getElementById('chartArea').appendChild(wrap);
+  const chart=echarts.init(wrap.querySelector('.chart'));charts.push(chart);
+  chart.setOption({
+    color:SERIES.map(s=>s.color),
+    tooltip:{trigger:'axis',valueFormatter:function(v){return fmt(v,isRoi?2:0)+(isRoi?'':' 元');}},
+    legend:{top:0,icon:'roundRect',itemWidth:12,itemHeight:8,textStyle:{color:'#374151'}},
+    grid:{left:10,right:18,top:42,bottom:18,containLabel:true},
+    xAxis:{type:'category',data:D.dates.map(monthDay),boundaryGap:false,...ax},
+    yAxis:{type:'value',...ax},
+    dataZoom:[{type:'inside'},{type:'slider',height:18,bottom:0}],
+    series:SERIES.map(s=>({name:s.name,type:'line',smooth:true,symbol:'none',connectNulls:false,data:D[s.key][metric],lineStyle:{width:2.4},emphasis:{focus:'series'}}))
+  });
+}
+function tableHead(){
+  if(MODE==='sales')return '<tr><th>日期</th><th>美团销售额</th><th>淘闪销售额</th><th>合计销售额</th></tr>';
+  return '<tr><th>日期</th><th>美团补贴</th><th>美团ROI</th><th>淘闪补贴</th><th>淘闪ROI</th><th>合计补贴</th><th>合计ROI</th></tr>';
+}
+function renderTable(){
+  let html='<thead>'+tableHead()+'</thead><tbody>';
+  D.dates.forEach(function(day,i){
+    html+='<tr><td>'+day+'</td>';
+    if(MODE==='sales'){
+      html+='<td>'+fmt(D.meituan.sales[i],2)+'</td><td>'+fmt(D.taoshan.sales[i],2)+'</td><td>'+fmt(D.total.sales[i],2)+'</td>';
+    }else{
+      ['meituan','taoshan','total'].forEach(function(k){
+        html+='<td>'+fmt(D[k].subsidy[i],2)+'</td><td>'+fmt(D[k].roi[i],2)+'</td>';
+      });
+    }
+    html+='</tr>';
+  });
+  document.getElementById('dailyTable').innerHTML=html+'</tbody>';
+}
+document.getElementById('rangeText').textContent=D.startDate+' 至 '+D.latestDate;
+document.getElementById('noteText').textContent=MODE==='sales'
+  ? '本页仅在美团与淘闪共同有数据的日期进行对比和合计；当前共 '+D.dates.length+' 天。'
+  : '本页仅在美团与淘闪共同有数据的日期进行对比和合计；当前共 '+D.dates.length+' 天。补贴为 0 的日期 ROI 留空。';
+kpiCards();
+if(MODE==='sales'){makeChart('sales','销售额','');}
+else{makeChart('subsidy','补贴金额','compact');makeChart('roi','ROI','compact');}
+renderTable();
+window.addEventListener('resize',function(){charts.forEach(c=>c.resize());});
+</script>
+</body>
+</html>

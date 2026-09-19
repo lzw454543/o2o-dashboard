@@ -170,6 +170,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
           </div>
         </div>
       </details>
+      <details class="menu" open>
+        <summary class="menu-parent">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M21 6H9"/><path d="M7 22l-4-4 4-4"/><path d="M3 18h12"/></svg>
+          <span>美团+淘闪</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </summary>
+        <div class="menu-body">
+          <div class="group-label">跨平台整体汇总</div>
+          <div class="nav-item" data-view="cross-sales" data-src="cross_sales.html" data-title="美团+淘闪整体销额日趋势">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+            整体销额日趋势
+          </div>
+          <div class="nav-item" data-view="cross-subsidy" data-src="cross_subsidy.html" data-title="美团+淘闪补贴与ROI日趋势">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            补贴与 ROI 日趋势
+          </div>
+        </div>
+      </details>
     </nav>
     <div class="foot">
       <span id="dataPeriod">数据周期加载中...</span><br>
@@ -231,9 +249,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
     frame.src=el.dataset.src;
     titleEl.textContent=el.dataset.title;
     extLink.href=el.dataset.src;
-    topMeta.textContent=view.indexOf('taoshan-')===0
-      ? '淘闪：8项指标 · 源文件缺失日期留空'
-      : '门店数 = 铺货店铺数 × (1 - SKU售罄率)';
+    if(view.indexOf('cross-')===0){
+      topMeta.textContent='跨平台：ROI = 当日销售额 / 当日补贴金额';
+    } else if(view.indexOf('taoshan-')===0){
+      topMeta.textContent='淘闪：8项指标 · 源文件缺失日期留空';
+    } else {
+      topMeta.textContent='门店数 = 铺货店铺数 × (1 - SKU售罄率)';
+    }
     if(history.replaceState){history.replaceState(null,'','#'+view);}
     sidebar.classList.remove('open');scrim.classList.remove('show');
   }
