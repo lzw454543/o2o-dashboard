@@ -130,8 +130,27 @@ function fmt(n){n=Number(n);return n>=10000?(n/10000).toFixed(2)+"万":Math.roun
 function fmt2(n){return Number(n).toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function dcls(v){return v===null?"flat":(v>=0?"up":"down");}
 function dtxt(v){if(v===null)return"新增";return(v>=0?"+":"")+v+"%";}
-document.getElementById("drange").textContent=D.daily.dates[0]+" 至 "+D.daily.dates[D.daily.dates.length-1];
-document.getElementById("kpiHint").textContent=D.monthLabel+" vs 上月同期，附全周期累计";
+function tipBase(){return {trigger:"axis",confine:true,renderMode:"html",order:"valueDesc",textStyle:{fontSize:12},extraCssText:"max-height:220px;overflow-y:auto;box-sizing:border-box;border-radius:6px;"}}
+function tipUnit(name,unit){
+  if(name==="销售额"||name==="品牌补贴")return{pre:"¥",suf:""};
+  if(name==="补贴率")return{pre:"",suf:"%"};
+  if(name==="销量")return{pre:"",suf:"件"};
+  if(name==="订单数")return{pre:"",suf:"单"};
+  if(name==="门店数")return{pre:"",suf:"店"};
+  return{pre:unit==="元"?"¥":"",suf:unit==="件"?"件":unit==="门"?"店":""};
+}
+function axisTip(ps,unit){
+  if(!ps||!ps.length)return "暂无数据";
+  var rows=ps.filter(function(x){return x.value!=null&&isFinite(Number(x.value));});
+  rows=(rows.length?rows:ps).slice().sort(function(a,b){return Number(b.value)-Number(a.value);});
+  return ps[0].axisValue+"<br/>"+rows.map(function(x){
+    var u=tipUnit(x.seriesName,unit);
+    return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+x.color+';margin-right:6px"></span>'+x.seriesName+"："+u.pre+Number(x.value).toLocaleString("zh-CN",{maximumFractionDigits:2})+u.suf+"<br/>";
+  }).join("");
+}
+const __latestDay=D.daily.dates[D.daily.dates.length-1];
+document.getElementById("drange").textContent=D.daily.dates[0]+" 至 "+__latestDay;
+document.getElementById("kpiHint").textContent=(+__latestDay.slice(5,7))+"月 vs 上月同期，附全周期累计";
 document.getElementById("dataThrough").textContent=D.latestDate;
 
 (function(){
@@ -150,7 +169,7 @@ function rbar(items,fn){
   const s=items.slice().sort(function(a,b){return a.value-b.value;});
   const mx=Math.max.apply(null,s.map(function(d){return d.value;}));
   const data=s.map(function(d,i){return{name:d.name.length>14?d.name.slice(0,13)+"…":d.name,fullName:d.name,value:d.value,itemStyle:{color:d.value===mx?"#16a34a":"rgba(17,24,39,"+(0.3+0.55*(i/Math.max(1,s.length-1))).toFixed(2)+")",borderRadius:[0,3,3,0]}};});
-  return{grid:{left:8,right:65,top:8,bottom:8,containLabel:true},tooltip:{trigger:"axis",axisPointer:{type:"shadow"},formatter:function(p){return p[0].data.fullName+"<br/>"+fn(p[0].value);}},
+  return{grid:{left:8,right:65,top:8,bottom:8,containLabel:true},tooltip:Object.assign(tipBase(),{axisPointer:{type:"shadow"},formatter:function(p){return p[0].data.fullName+"<br/>"+fn(p[0].value);}}),
     xAxis:{type:"value",axisLine:ax.axisLine,axisTick:ax.axisTick,splitLine:ax.splitLine,axisLabel:{color:"#6b7280",fontSize:10,formatter:function(v){return fmt(v);}}},
     yAxis:{type:"category",data:s.map(function(d){return d.name.length>14?d.name.slice(0,13)+"…":d.name;}),axisLine:ax.axisLine,axisTick:ax.axisTick,splitLine:{show:false},axisLabel:{color:"#374151",fontSize:10}},
     series:[{type:"bar",data:data,barMaxWidth:18,label:{show:true,position:"right",formatter:function(p){return fn(p.value);},fontSize:10,color:"#374151"}}]};
@@ -162,12 +181,12 @@ mk("c_pb").setOption(rbar(D.prodSub,function(v){return"¥"+fmt2(v);}));
 (function(){
   const m=D.monthly;
   const ratio=m.销售额.map(function(s,i){return s>0?+(m.补贴[i]/s*100).toFixed(2):0;});
-  mk("c_ms").setOption({tooltip:{trigger:"axis"},legend:{top:0,textStyle:{fontSize:10}},
+  mk("c_ms").setOption({tooltip:Object.assign(tipBase(),{formatter:function(p){return axisTip(p);}}),legend:{top:0,textStyle:{fontSize:10}},
     grid:{left:8,right:8,top:32,bottom:8,containLabel:true},
     xAxis:{type:"category",data:m.months,...ax},
     yAxis:[{type:"value",...ax,axisLabel:{...ax.axisLabel,formatter:function(v){return fmt(v);}}},{type:"value",...ax,splitLine:{show:false},axisLabel:{...ax.axisLabel,formatter:"{value}%"},max:function(v){return Math.ceil(v.max*1.3);}}],
     series:[{name:"销售额",type:"bar",data:m.销售额,itemStyle:{color:C,borderRadius:[4,4,0,0]},barMaxWidth:36},{name:"品牌补贴",type:"bar",data:m.补贴,itemStyle:{color:"#f59e0b",borderRadius:[4,4,0,0]},barMaxWidth:36},{name:"补贴率",type:"line",yAxisIndex:1,data:ratio,smooth:true,symbol:"circle",symbolSize:7,lineStyle:{width:2.5,color:"#dc2626"},itemStyle:{color:"#dc2626"},label:{show:true,formatter:"{c}%",fontSize:10,color:"#dc2626",position:"top"}}]});
-  mk("c_mv").setOption({tooltip:{trigger:"axis"},legend:{top:0,textStyle:{fontSize:10}},
+  mk("c_mv").setOption({tooltip:Object.assign(tipBase(),{formatter:function(p){return axisTip(p);}}),legend:{top:0,textStyle:{fontSize:10}},
     grid:{left:8,right:8,top:32,bottom:8,containLabel:true},
     xAxis:{type:"category",data:m.months,...ax},
     yAxis:[{type:"value",name:"销量",...ax,axisLabel:{...ax.axisLabel,formatter:function(v){return fmt(v);}}},{type:"value",name:"订单",...ax,splitLine:{show:false},axisLabel:{...ax.axisLabel,formatter:function(v){return fmt(v);}}}],
@@ -197,7 +216,7 @@ mk("c_pb").setOption(rbar(D.prodSub,function(v){return"¥"+fmt2(v);}));
         {name:"品牌补贴",type:"line",smooth:true,symbol:"none",data:b.map(function(x){return Math.round(x*100)/100;}),lineStyle:{width:2,color:"#ea580c",type:"dashed"},itemStyle:{color:"#ea580c"}}
       ];
     }
-    c.setOption({tooltip:{trigger:"axis",formatter:function(p){let s2=p[0].axisValue+"<br/>";p.forEach(function(x){const u=(x.seriesName==="销售额"||x.seriesName==="品牌补贴")?"¥":"";s2+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+x.color+';margin-right:6px"></span>'+x.seriesName+"："+u+Number(x.value).toLocaleString("zh-CN",{maximumFractionDigits:2})+"<br/>";});return s2;}},
+    c.setOption({tooltip:Object.assign(tipBase(),{formatter:function(p){return axisTip(p);}}),
       legend:{top:0,textStyle:{fontSize:10}},grid:{left:8,right:8,top:30,bottom:8,containLabel:true},
       xAxis:{type:"category",data:D.daily.dates,boundaryGap:false,...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return x.slice(5);},interval:6}},
       yAxis:{type:"value",...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return fmt(x);}}},dataZoom:[{type:"inside"}],series:series},true);
@@ -243,11 +262,7 @@ function makeProdChart(containerId,chipId,metric,unit,areaColor){
         areaStyle:areaColor?{opacity:0.04,color:col}:undefined});
     });
     c.setOption({
-      tooltip:{trigger:"axis",formatter:function(ps){
-        let h=ps[0].axisValue+"<br/>";
-        ps.forEach(function(x){h+='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+x.color+';margin-right:6px"></span>'+x.seriesName+"："+(unit==="元"?"¥":"")+Number(x.value).toLocaleString("zh-CN",{maximumFractionDigits:2})+(unit==="件"?"件":unit==="门"?"店":"")+"<br/>";});
-        return h;
-      }},
+      tooltip:Object.assign(tipBase(),{formatter:function(ps){return axisTip(ps,unit);}}),
       legend:{type:"scroll",top:0,textStyle:{fontSize:10},data:prods.filter(function(p){return sel.has(p);})},
       grid:{left:8,right:8,top:36,bottom:8,containLabel:true},
       xAxis:{type:"category",data:D.daily.dates,boundaryGap:false,...ax,axisLabel:{...ax.axisLabel,formatter:function(x){return x.slice(5);},interval:6}},
